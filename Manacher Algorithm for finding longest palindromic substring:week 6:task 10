@@ -1,0 +1,165 @@
+import java.io.*;
+
+public class Solution {
+
+    // Manacher's Algorithm
+    static int[] manacher(char[] a) {
+        int n = a.length;
+        int[] radius = new int[n];
+
+        int center = 0;
+        int right = 0;
+
+        for (int i = 0; i < n; i++) {
+
+            if (i < right) {
+                radius[i] = Math.min(
+                    right - i,
+                    radius[2 * center - i]
+                );
+            }
+
+            while (i - radius[i] - 1 >= 0 &&
+                   i + radius[i] + 1 < n &&
+                   a[i - radius[i] - 1] ==
+                   a[i + radius[i] + 1]) {
+
+                radius[i]++;
+            }
+
+            if (i + radius[i] > right) {
+                center = i;
+                right = i + radius[i];
+            }
+        }
+
+        return radius;
+    }
+
+    // Sparse Table - Range Maximum Query
+    static class SparseTable {
+
+        int[][] table;
+        int[] log;
+
+        SparseTable(int[] arr) {
+
+            int n = arr.length;
+
+            log = new int[n + 1];
+
+            for (int i = 2; i <= n; i++) {
+                log[i] = log[i / 2] + 1;
+            }
+
+            int levels = log[n] + 1;
+
+            table = new int[levels][n];
+
+            System.arraycopy(arr, 0, table[0], 0, n);
+
+            for (int j = 1; j < levels; j++) {
+
+                int len = 1 << j;
+                int half = len >> 1;
+
+                for (int i = 0; i + len <= n; i++) {
+
+                    table[j][i] = Math.max(
+                        table[j - 1][i],
+                        table[j - 1][i + half]
+                    );
+                }
+            }
+        }
+
+        int query(int left, int right) {
+
+            int length = right - left + 1;
+            int k = log[length];
+
+            return Math.max(
+                table[k][left],
+                table[k][right - (1 << k) + 1]
+            );
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        BufferedReader br =
+            new BufferedReader(
+                new InputStreamReader(System.in)
+            );
+
+        // Input
+        int n = Integer.parseInt(br.readLine().trim());
+        String s = br.readLine().trim();
+
+        // S + S
+        String doubled = s + s;
+
+        /*
+         * Transform:
+         *
+         * abc -> #a#b#c#
+         *
+         * This allows Manacher to handle
+         * both odd and even palindromes.
+         */
+        char[] transformed =
+            new char[2 * doubled.length() + 1];
+
+        for (int i = 0; i < transformed.length; i++) {
+
+            if (i % 2 == 0) {
+                transformed[i] = '#';
+            } else {
+                transformed[i] = doubled.charAt(i / 2);
+            }
+        }
+
+        // Find palindrome radii
+        int[] radius = manacher(transformed);
+
+        // RMQ
+        SparseTable rmq = new SparseTable(radius);
+
+        StringBuilder output = new StringBuilder();
+
+        // Process every rotation
+        for (int k = 0; k < n; k++) {
+
+            int left = 2 * k + 1;
+            int right = 2 * (k + n - 1) + 1;
+
+            int low = 1;
+            int high = n;
+            int answer = 1;
+
+            // Binary search
+            while (low <= high) {
+
+                int len = (low + high) >>> 1;
+
+                int leftCenter = left + len - 1;
+                int rightCenter = right - len + 1;
+
+                if (leftCenter <= rightCenter &&
+                    rmq.query(leftCenter, rightCenter) >= len) {
+
+                    answer = len;
+                    low = len + 1;
+
+                } else {
+
+                    high = len - 1;
+                }
+            }
+
+            output.append(answer).append('\n');
+        }
+
+        System.out.print(output);
+    }
+}
