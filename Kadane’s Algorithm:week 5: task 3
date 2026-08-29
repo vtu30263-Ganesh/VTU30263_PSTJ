@@ -1,0 +1,61 @@
+import java.io.*;
+import java.util.*;
+
+public class Solution {
+
+    public static List<Integer> maxSubarray(List<Integer> arr) {
+
+        // Maximum subarray sum
+        int current = arr.get(0);
+        int maxSub = arr.get(0);
+
+        // Maximum subsequence sum
+        int maxSeq = arr.get(0);
+
+        for (int i = 1; i < arr.size(); i++) {
+            int num = arr.get(i);
+
+            // Kadane's algorithm
+            current = Math.max(num, current + num);
+            maxSub = Math.max(maxSub, current);
+
+            // Add positive numbers for subsequence
+            if (num > 0) {
+                maxSeq += num;
+            }
+        }
+
+        // If all numbers are negative
+        if (maxSeq <= 0) {
+            maxSeq = Collections.max(arr);
+        }
+
+        return Arrays.asList(maxSub, maxSeq);
+    }
+
+    public static void main(String[] args) throws IOException {
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        int t = Integer.parseInt(br.readLine());
+
+        while (t-- > 0) {
+
+            int n = Integer.parseInt(br.readLine());
+
+            StringTokenizer st = new StringTokenizer(br.readLine());
+
+            List<Integer> arr = new ArrayList<>();
+
+            for (int i = 0; i < n; i++) {
+                arr.add(Integer.parseInt(st.nextToken()));
+            }
+
+            List<Integer> result = maxSubarray(arr);
+
+            System.out.println(result.get(0) + " " + result.get(1));
+        }
+
+        br.close();
+    }
+}
